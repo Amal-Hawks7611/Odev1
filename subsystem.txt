@@ -1,1 +1,31 @@
-
+public class ElevatorSubsystem extends SubsystemBase=robotun asansör sistemini kontrol ediyor
+import frc.robot.Constants.Elevator;import com.ctre.phoenix6.hardware.TalonFX;=bunlar bizim hangi teknolojilere bağlı olduğumuzu gösterir
+ public TalonFX leaderMotor;
+    public TalonFX followerMotor;sistemin hangi parçaları kontrol ettiğini gösterir
+return simulationEncoder;simü
+// Different to the pid, ocalpid controlls distance instead of speed. Because
+    // TalonFX already controlls speedlasyon kodlayıcısına döner bunlar kodda işe yaramaz ama karşıdakine bilgi verir
+   if (leaderPosition > setpoint) {
+                        if (setpoint <= 1) {
+                            leaderMotor.set(-0.1);
+                            followerMotor.set(-0.1);
+                            simulationEncoder -= 0.1 * revolutionsPerLoop / 0.7;
+                        } else {
+                            leaderMotor.set(-speed * 0.7);
+                            followerMotor.set(-speed * 0.7);
+                            simulationEncoder -= revolutionsPerLoop * 0.7;
+                        }
+                    } else {
+                        leaderMotor.set(speed);
+                        followerMotor.set(speed);
+                        simulationEncoder += revolutionsPerLoop;
+                    }
+                }
+            } else {
+                Elevator.ELEVATOR_SPEED = 0.2;
+            }
+        } else {
+            OI.IS_PID_ENDED = true;
+        }
+    }
+Bunlar robotun çalışmasının doğru olup olmadığını denetler
