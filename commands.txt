@@ -1,0 +1,21 @@
+   package frc.robot.commands.Elevator; başlangıç tanıtımı
+
+        System.out.println("Elevator Is Moving To The Algea");
+        OI.IS_PROCESSING = true;
+        OI.IS_PID_ENDED = false;
+        Elevator.PROCESS_START_POSITION = elevatorSubsystem.getLeaderMotorEncoder();
+        Elevator.CURRENT_DIRECTION = elevatorSubsystem
+                .getLeaderMotorEncoder() < (!ismiddle ? Elevator.ELEVATOR_ALGEA_VALUE_DOWN
+                        : Elevator.ELEVATOR_ALGEA_VALUE_MIDDLE);
+    }asansörün ne yaptığıyla alakalı
+@Override
+    public void execute() {
+        if (!OI.IS_PID_ENDED) {
+            if (ismiddle) {
+                elevatorSubsystem.OCAL_PID_PREMIUM(Elevator.ELEVATOR_ALGEA_VALUE_MIDDLE);
+            } else {
+                elevatorSubsystem.OCAL_PID_PREMIUM(Elevator.ELEVATOR_ALGEA_VALUE_DOWN);
+            }
+        } else {
+            this.end(false);
+        }hareketleri
