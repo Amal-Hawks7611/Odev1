@@ -1,0 +1,1103 @@
+{\rtf1\ansi\ansicpg1254\deff0\nouicompat\deflang1055{\fonttbl{\f0\fnil\fcharset162 Calibri;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset162 Bahnschrift SemiCondensed;}{\f3\fnil\fcharset0 Castellar;}}
+{\colortbl ;\red255\green192\blue0;\red0\green77\blue187;\red0\green0\blue0;\red255\green0\blue0;}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\cf1\f0\fs22 documan name \cf2 ElevatorSubsystem.java\cf0\par
+\par
+\par
+\par
+
+\pard\ri-784\sa200\sl276\slmult1\tx8520\f1\lang31 leaderMotorPosition = leaderMotor.getPosition();\par
+
+\pard\sa200\sl276\slmult1         followerMotorPosition = followerMotor.getPosition();\par
+        simulationEncoder = 0;\par
+        resetEncoders();\par
+    \par
+\par
+public class ElevatorSubsystem extends SubsystemBase \{\par
+    public TalonFX leaderMotor;\par
+    public TalonFX followerMotor;\par
+    public double simulationEncoder;\par
+    public StatusSignal<Angle> leaderMotorPosition;\par
+    private StatusSignal<Angle> followerMotorPosition;\par
+\par
+\par
+\par
+ public void manualControl(double speed) \{\par
+        leaderMotor.set(speed);\par
+        followerMotor.set(speed);\par
+\par
+        double maxRPM = 6000;\par
+        double loopTimeSeconds = 0.02;\par
+\par
+        double revolutionsPerSecond = (maxRPM / 60.0) * Math.abs(speed);\par
+        double revolutionsPerLoop = revolutionsPerSecond * loopTimeSeconds;\par
+\par
+        simulationEncoder += speed > 0 ? revolutionsPerLoop : -revolutionsPerLoop;\par
+    \par
+\par
+    public void OcalPID(double speed, double setpoint) \{\par
+        if (EnabledParts.IS_ELEVATOR_ENABLED) \{\par
+            if (!OI.IS_PID_ENDED) \{\par
+                double leaderPosition = getLeaderMotorEncoder();\par
+                if (isWithinTolerance(leaderPosition, Elevator.ELEVATOR_END_VALUE)\par
+                        || isWithinTolerance(leaderPosition, setpoint)) \{\par
+                    stopMotors();\par
+                    OI.IS_PID_ENDED = true;\par
+\par
+\par
+\par
+\par
+  double maxRPM = 6000;\par
+                    double loopTimeSeconds = 0.02;\par
+\par
+                    double revolutionsPerSecond = (maxRPM / 60.0) * Math.abs(speed);\par
+                    double revolutionsPerLoop = revolutionsPerSecond * loopTimeSeconds;\par
+\par
+                    if (leaderPosition > setpoint) \{\par
+                        if (setpoint <= 1) \{\par
+                            leaderMotor.set(-0.1);\par
+                            followerMotor.set(-0.1);\par
+                            simulationEncoder -= 0.1 * revolutionsPerLoop / 0.7;\par
+                        \} else \{\par
+                            leaderMotor.set(-speed * 0.7);\par
+                            followerMotor.set(-speed * 0.7);\par
+                            simulationEncoder -= revolutionsPerLoop * 0.7;\par
+                        \}\par
+                    \} else \{\par
+                        leaderMotor.set(speed);\par
+                        followerMotor.set(speed);\par
+                        simulationEncoder += revolutionsPerLoop;\par
+                    \}\par
+                \}\par
+            \} else \{\par
+                Elevator.ELEVATOR_SPEED = 0.2;\par
+            \}\par
+        \} else \{\par
+            OI.IS_PID_ENDED = true;\par
+        \}\par
+\par
+\par
+\par
+\par
+    \}     if (index <= 3) \{\par
+            Elevator.PROCESS_SPEED = Elevator.CURRENT_DIRECTION\par
+                    ? Elevator.UP_SPEED + index * (Elevator.MAX_UP_SPEED / 6)\par
+                    : Elevator.DOWN_SPEED + index * (Elevator.MAX_DOWN_SPEED / 6);\par
+        \} else \{\par
+            Elevator.PROCESS_SPEED = Elevator.CURRENT_DIRECTION\par
+                    ? Elevator.UP_SPEED + (6 - index) * (Elevator.MAX_UP_SPEED / 6)\par
+                    : Elevator.DOWN_SPEED + (6 - index) * (Elevator.MAX_DOWN_SPEED / 6);\par
+        \}\par
+\par
+\par
+\par
+\f0\lang1055      if (index <= 3) \{\par
+            Elevator.PROCESS_SPEED = Elevator.CURRENT_DIRECTION\par
+                    ? Elevator.UP_SPEED + index * (Elevator.MAX_UP_SPEED / 6)\par
+                    : Elevator.DOWN_SPEED + index * (Elevator.MAX_DOWN_SPEED / 6);\par
+        \} else \{\par
+            Elevator.PROCESS_SPEED = Elevator.CURRENT_DIRECTION\par
+                    ? Elevator.UP_SPEED + (6 - index) * (Elevator.MAX_UP_SPEED / 6)\par
+                    : Elevator.DOWN_SPEED + (6 - index) * (Elevator.MAX_DOWN_SPEED / 6);\par
+        \}\f1\lang31\par
+\par
+\par
+\cf1\f0\lang1055 documan name \cf2 IntakeMoverSubsystem.java\cf0\f1\lang31\par
+\par
+public class IntakeMoverSubsystem extends SubsystemBase \{\par
+    public TalonFX leaderMotor;\par
+    private StatusSignal<Angle> leaderMotorPosition;\par
+    public RobotContainer container;\par
+    public double simEncoder;\par
+\par
+    public IntakeMoverSubsystem(RobotContainer container) \{\par
+        leaderMotor = new TalonFX(IntakeMover.IM_LEADER_MOTOR_PORT, OI.RIO_CANBUS_STRING);\par
+        leaderMotorPosition = leaderMotor.getPosition();\par
+        simEncoder = 0;\par
+        this.container = container;\par
+        resetEncoders();\par
+    \}\par
+\par
+\par
+\par
+ public double getLeaderMotorEncoder() \{\par
+        if (RobotBase.isSimulation()) \{\par
+            return simEncoder;\par
+        \} else \{\par
+            return leaderMotorPosition.refresh().getValueAsDouble();\par
+        \}\par
+\par
+    \}\par
+\par
+    public void resetEncoders() \{\par
+        leaderMotor.setPosition(0);\par
+    \}\par
+\par
+\f0\lang1055   \f1\lang31\par
+\par
+\par
+  public void manualControl(double speed) \{\par
+        leaderMotor.set(speed);\par
+\par
+        double maxRPM = 6000;\par
+        double loopTimeSeconds = 0.02;\par
+\par
+        double revolutionsPerSecond = (maxRPM / 60.0) * Math.abs(speed);\par
+        double revolutionsPerLoop = revolutionsPerSecond * loopTimeSeconds;\par
+\par
+        simEncoder += speed > 0 ? revolutionsPerLoop : -revolutionsPerLoop;\par
+    \}\par
+\par
+    // OCALPID\par
+    public void MoveIT(double speed, double setpoint) \{\par
+        if (EnabledParts.IS_INTAKE_MOVER_ENABLED) \{\par
+            if (OI.IS_INTAKE_MOVING) \{\par
+                double leaderPosition = getLeaderMotorEncoder();\par
+                if (isWithinTolerance(leaderPosition, setpoint)) \{\par
+                    stopMotors();\par
+                    OI.IS_INTAKE_MOVING = false;\par
+                \} else \{\par
+                    double maxRPM = 6000;\par
+                    double loopTimeSeconds = 0.02;\par
+                    double revolutionsPerSecond = (maxRPM / 60.0) * Math.abs(speed);\par
+                    double revolutionsPerLoop = revolutionsPerSecond * loopTimeSeconds;\par
+\par
+                    if (leaderPosition > setpoint) \{\par
+                        leaderMotor.set(-speed);\par
+                        simEncoder -= revolutionsPerLoop;\par
+                    \} else \{\par
+                        leaderMotor.set(speed);\par
+                        simEncoder += revolutionsPerLoop;\par
+                    \}\par
+                \}\par
+            \}\par
+        \} else \{\par
+            OI.IS_INTAKE_MOVING = false;\par
+        \}\par
+    \}\par
+\par
+    private boolean isWithinTolerance(double value, double target) \{\par
+        return value >= target - IntakeMover.OCAL_PID_TOLERANCE_VALUE\par
+                && value <= target + IntakeMover.OCAL_PID_TOLERANCE_VALUE;\par
+    \}\par
+\par
+    private void stopMotors() \{\par
+        leaderMotor.stopMotor();\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf1\f0\lang1055 documan name \cf2 IntakeSubsystem.java\cf0\f1\lang31\par
+\par
+\par
+\par
+\f0\lang1055 public IntakeSubsystem(RobotContainer container) \{\par
+        leaderMotor = new TalonFX(Intake.INTAKE_LEADER_MOTOR_PORT, OI.RIO_CANBUS_STRING);\par
+        leaderMotorPosition = leaderMotor.getPosition();\par
+        this.container = container;\par
+        resetEncoders();\par
+    \}\f1\lang31\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+public void Intake() \{\par
+        if (!EnabledParts.IS_OBJECT_SENSOR_ENABLED) \{\par
+            if (timer.hasElapsed(Intake.INTAKE_TIME)) \{\par
+                leaderMotor.stopMotor();\par
+                OI.IS_INTAKING = false;\par
+            \} else \{\par
+                leaderMotor.set(-Intake.INTAKE_SPEED);\par
+            \}\par
+        \} else \{\par
+            if (!container.objectDetector.CheckObject()) \{\par
+                leaderMotor.set(-Intake.INTAKE_SPEED);\par
+            \} else \{\par
+                leaderMotor.stopMotor();\par
+                OI.IS_INTAKING = false;\par
+            \}\par
+        \}\par
+    \}\par
+\par
+    public void Shoot() \{\par
+        if (!EnabledParts.IS_OBJECT_SENSOR_ENABLED) \{\par
+            if (timer.hasElapsed(-Intake.OUTTAKE_TIME)) \{\par
+                leaderMotor.stopMotor();\par
+                OI.IS_INTAKING = false;\par
+            \} else \{\par
+                leaderMotor.set(-Intake.OUTTAKE_SPEED);\par
+            \}\par
+        \} else \{\par
+            if (container.objectDetector.CheckObject()) \{\par
+                leaderMotor.set(-Intake.OUTTAKE_SPEED);\par
+\cf3             \} else \{\par
+\cf0                 leaderMotor.stopMotor();\par
+                OI.IS_INTAKING = false;\par
+            \}\par
+        \}\par
+\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf1\f0\lang1055 documan name \cf2  LimelightSubsystem.java\par
+\par
+\par
+\cf4\fs48 I DIDN'T UNDERSTAND THIS CLASSOR CODES\cf2\fs22\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf1 documan name \cf2  RotarySwitchSubsystem.java\par
+\par
+\par
+\par
+\par
+\par
+\cf3\par
+public RotarySwitchSubsystem() \{\par
+        dtPin = new DigitalInput(RotarySwitch.DT_CHANNEL);\par
+        clkPin = new DigitalInput(RotarySwitch.CLK_CHANNEL);\par
+        swPin = new DigitalInput(RotarySwitch.SW_CHANNEL);\par
+        lastClockState = clkPin.get() ? 1 : 0;\par
+        totalTurns = 0;\par
+    \}\par
+\par
+    @Override\par
+    public void periodic() \{\par
+        int clkState = clkPin.get() ? 1 : 0;\par
+        int dtState = dtPin.get() ? 1 : 0;\par
+\par
+        if (clkState != lastClockState) \{\par
+            if (dtState != clkState) \{\par
+                totalTurns++;\par
+            \} else \{\par
+                totalTurns--;\par
+            \}\par
+            lastClockState = clkState;\par
+        \}\par
+\par
+        SmartDashboard.putNumber("RotarySwitch", totalTurns);\par
+    \}\par
+\par
+    public int getTotalTurns() \{\par
+        return totalTurns;\par
+    \}\par
+\par
+    public boolean isSwitchPressed() \{\par
+        return !swPin.get();\par
+    \}\par
+\}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf2\par
+
+\pard\ri-784\sa200\sl276\slmult1\cf1 documan name \cf2  \b\fs36 CONTANTS\cf3\b0\fs22\par
+
+\pard\sa200\sl276\slmult1\f1\lang31\par
+\par
+package frc.robot;\par
+\par
+import com.pathplanner.lib.config.PIDConstants;\par
+\par
+import edu.wpi.first.math.geometry.Translation3d;\par
+import edu.wpi.first.math.util.Units;\par
+import edu.wpi.first.wpilibj.LEDPattern;\par
+import edu.wpi.first.wpilibj.LEDPattern.GradientType;\par
+import edu.wpi.first.wpilibj.util.Color;\par
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;\par
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;\par
+import edu.wpi.first.wpilibj2.command.button.Trigger;\par
+import swervelib.math.Matter;\par
+\par
+\par
+\par
+\par
+\par
+\par
+public final class Constants \{\par
+    public static final double ROBOT_MASS = 104.72 * 0.453592;\par
+    public static final Matter CHASSIS = new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), ROBOT_MASS);\par
+    public static final double LOOP_TIME = 0.13; // s, 20ms + 110ms sprk max velocity lag\par
+    public static final double MAX_SPEED = 3;\par
+    public static final double LIMELIGHT_KP = 0.2;\par
+    public static final double LIMELIGHT_TX = 12;\par
+    public static final double LIMELIGHT_RIGHT_TIME = 0.09;\par
+    public static final double LIMELIGHT_ALGEA_TIME = 0.76;\par
+    public static final double LIMELIGHT_RIGHT_BRANCH_TIME = 1.6533169;\par
+\par
+    public static Color setBrightness(Color currentColor, double brightness) \{\par
+        return new Color(currentColor.red * brightness, currentColor.green * brightness,\par
+                currentColor.blue * brightness);\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+ public static final class DrivebaseConstants \{\par
+        public static final double WHEEL_LOCK_TIME = 10;\par
+        public static final PIDConstants transation = new PIDConstants(12, 0.0, 0.05);\par
+        public static final PIDConstants angle = new PIDConstants(3, 0.0, 0.05);\par
+    \}\par
+\par
+    public static class OperatorConstants \{\par
+        public static final double DEADBAND = 0.1;\par
+        public static final double LEFT_Y_DEADBAND = 0.1;\par
+        public static final double RIGHT_X_DEADBAND = 0.1;\par
+        public static final double TURN_CONSTANT = 6;\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+public static final class LedSubsystem \{\par
+        public static int LED_PWM_PORT = 0;\par
+        public static int LED_LENGTH = 180;\par
+        public static int BREATHE_MAGNITUDE = 5;\par
+        public static LEDPattern ELEVATOR_PROCESS_COLOR = LEDPattern.solid(setBrightness(Color.kPurple, 0.69 * 0.8));\par
+        public static LEDPattern TARGET_FOCUS_COLOR = LEDPattern.solid(setBrightness(Color.kGreen, 0.69 * 0.8));\par
+        public static LEDPattern INTAKE_COLOR = LEDPattern.solid(setBrightness(Color.kWhite, 0.69 * 0.8));\par
+        public static LEDPattern ALGEA_INTAKE_COLOR = LEDPattern.solid(setBrightness(Color.kAqua, 0.69 * 0.8));\par
+        public static LEDPattern BREATHE_COLOR = LEDPattern.gradient(GradientType.kDiscontinuous,\par
+                setBrightness(Color.kOrangeRed, 0.69 * 0.8), setBrightness(Color.kRed, 0.69 * 0.8),\par
+                setBrightness(Color.kDarkRed, 0.69 * 0.8));\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+  public static final class RotarySwitch \{\par
+        public static int DT_CHANNEL = 3;\par
+        public static int CLK_CHANNEL = 4;\par
+        public static int SW_CHANNEL = 5;\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+public static final class Elevator \{\par
+        public static int ELEVATOR_LEADER_MOTOR_PORT = 14;\par
+        public static int ELEVATOR_FOLLOWER_MOTOR_PORT = 13;\par
+        public static double ELEVATOR_SPEED = 0.25;\par
+        public static double ELEVATOR_DOWN_VOLTS = 0.05;\par
+        public static double ELEVATOR_STATIC_VOLTS = 0.3;\par
+        public static double OCAL_PID_TOLERANCE_VALUE = 0.35;// TODO Increase If System Doesn't Work\par
+        public static double ELEVATOR_START_VALUE = 0; // Generally True\par
+        public static double ELEVATOR_END_VALUE = 34.5;\par
+        public static double ELEVATOR_SOURCE_VALUE = 0;\par
+        public static double ELEVATOR_PROCESSOR_VALUE = 1.5;\par
+        public static double ELEVATOR_TOZERO_VALUE = 0;\par
+        public static double ELEVATOR_ALGZERO_VALUE = 3;\par
+        public static double ELEVATOR_L1_VALUE = 4.15;\par
+        public static double ELEVATOR_L2_VALUE = 8.10;\par
+        public static double ELEVATOR_L3_VALUE = 20.21;\par
+        public static double ELEVATOR_L4_VALUE = 35;\par
+        public static double ELEVATOR_ALGEA_VALUE_DOWN = 2.5;\par
+        public static double ELEVATOR_ALGEA_VALUE_MIDDLE = 18.3;\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+  public static double UP_SPEED = 0.3;\par
+        public static double MAX_UP_SPEED = 0.6;\par
+        public static double DOWN_SPEED = 0.12;\par
+        public static double MAX_DOWN_SPEED = 0.18;\par
+        public static boolean CURRENT_DIRECTION = true;\par
+        public static double PROCESS_START_POSITION = 0;\par
+        public static double PROCESS_SPEED = 0.3;\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+ public static class Intake \{\par
+        // Intake Motor Port\par
+        public static double INTAKE_REVERSE_SPEED = 0.3;\par
+        public static int INTAKE_LEADER_MOTOR_PORT = 16;\par
+        public static double INTAKE_SPEED = 0.13;\par
+        public static double OUTTAKE_SPEED = 0.58;\par
+        public static double INTAKE_TIME = 0.5;\par
+        public static double OUTTAKE_TIME = 1;\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+  public static class AlgeaIntake \{\par
+        // Algea Intake Motor Port\par
+        public static int ALGEA_LEADER_MOTOR_PORT = 16; // Shoud Be Same With Intake\par
+        public static double INTAKE_SPEED = 0.2;\par
+        public static double OUTTAKE_SPEED = 0.4;\par
+        public static double INTAKE_TIME = 15;\par
+        public static double OUTTAKE_TIME = 1;\par
+        public static double ALGEA_STATIC_VOLTAGES = 0.050;\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+ public static class IntakeMover \{\par
+        public static int IM_LEADER_MOTOR_PORT = 15;\par
+        public static double INTAKE_MOVER_SPEED = 0.15;\par
+        public static double OCAL_PID_TOLERANCE_VALUE = 0.13;\par
+        public static double IM_STATIC_VOLTAGE = 0.15;\par
+        public static double IM_ALGEA_STATIC = 0.25;\par
+        public static double IM_CORAL_STATIC = 0.05;\par
+\par
+        public static double INTAKE_PROCESSOR_VALUE = 25.5;\par
+        public static double INTAKE_SOURCE_VALUE = 0;\par
+        public static double INTAKE_ALGEA_VALUE = 17.5;\par
+        public static double INTAKE_REEFSCAPE_VALUE = 2.5;\par
+        public static double INTAKE_CORAL_VALUE = 3.7;\par
+        public static double INTAKE_L4_VALUE = 2.9;\par
+        public static double INTAKE_L4_2_VALUE = 11;\par
+    \}\par
+\par
+\par
+public static class ObjectDetector \{\par
+        public static final int SENSOR_DIO_PORT = 2;\par
+    \}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+ public static class Controlls \{\par
+        public static CommandPS5Controller DRIVER_CONTROLLER = new CommandPS5Controller(OI.DRIVER_CONTROLLER_PORT);\par
+        public static CommandXboxController OPERATOR_CONTROLLER = new CommandXboxController(\par
+                OI.OPERATOR_CONTROLLER_PORT);\par
+        // For TEU\par
+        public static Trigger ELEVATOR_MANUAL_UP = DRIVER_CONTROLLER.R2();\par
+        public static Trigger ELEVATOR_MANUAL_DOWN = DRIVER_CONTROLLER.L2();\par
+        public static Trigger INTAKE_MOVE_UP = DRIVER_CONTROLLER.R1();\par
+        public static Trigger INTAKE_MOVE_DOWN = DRIVER_CONTROLLER.L1();\par
+\par
+        public static Trigger L1 = DRIVER_CONTROLLER.options();\par
+        public static Trigger L2 = DRIVER_CONTROLLER.circle();\par
+        public static Trigger L3 = DRIVER_CONTROLLER.cross();\par
+        public static Trigger L4 = DRIVER_CONTROLLER.triangle();\par
+\par
+        public static Trigger GET_SOURCE = DRIVER_CONTROLLER.square();\par
+        public static Trigger LED_CYCLE = DRIVER_CONTROLLER.button(14);\par
+        public static Trigger ELEVATOR_TOZERO = DRIVER_CONTROLLER.povDown();\par
+\par
+        public static int SWERVE_RIGHT_X_AXIS = 2;\par
+        public static Trigger RESET_GYRO = DRIVER_CONTROLLER.povUp();\par
+\par
+        public static Trigger LIMELIGHT_FOCUS = DRIVER_CONTROLLER.L3();\par
+        public static Trigger LIMELIGHT_STOP = DRIVER_CONTROLLER.R3();\par
+\par
+        public static Trigger ALGEA_INTAKE = DRIVER_CONTROLLER.povLeft();\par
+        public static Trigger ALGEA_OUTTAKE = DRIVER_CONTROLLER.povRight();\par
+        public static Trigger ALGEA_PROCESSOR = DRIVER_CONTROLLER.PS();\par
+        public static Trigger ALGEA_REMOVAL = DRIVER_CONTROLLER.create();\par
+\par
+        // OPERATOR\par
+        public static Trigger CORAL_INTAKE = OPERATOR_CONTROLLER.povLeft();\par
+        public static Trigger CORAL_GERIAL = OPERATOR_CONTROLLER.povRight();\par
+        public static Trigger ADMIN = OPERATOR_CONTROLLER.button(9);\par
+        public static Trigger LIMELIGHT_PREMIUM = OPERATOR_CONTROLLER.y();\par
+        public static Trigger ZERO_ALL = OPERATOR_CONTROLLER.x();\par
+    \}\par
+\par
+    public static class Test_Controlls \{\par
+        public static Trigger T_ELEVATOR_MANUAL_UP = Controlls.DRIVER_CONTROLLER.R2();\par
+        public static Trigger T_ELEVATOR_MANUAL_DOWN = Controlls.DRIVER_CONTROLLER.L2();\par
+        public static Trigger T_INTAKE_MOVE_UP = Controlls.DRIVER_CONTROLLER.R1();\par
+        public static Trigger T_INTAKE_MOVE_DOWN = Controlls.DRIVER_CONTROLLER.L1();\par
+        public static Trigger T_ELEVATOR_ZERO = Controlls.DRIVER_CONTROLLER.povDown();\par
+        public static Trigger T_ALGEA_INTAKE = Controlls.DRIVER_CONTROLLER.povLeft();\par
+        public static Trigger T_ALGEA_OUTTAKE = Controlls.DRIVER_CONTROLLER.circle();\par
+        public static Trigger T_CORAL_INTAKE = Controlls.DRIVER_CONTROLLER.square();\par
+        public static Trigger T_CORAL_OUTTAKE = Controlls.DRIVER_CONTROLLER.povRight();\par
+        public static Trigger T_LED_CYCLE = Controlls.DRIVER_CONTROLLER.triangle();\par
+        public static Trigger T_LED_MORSE = Controlls.DRIVER_CONTROLLER.options();\par
+        public static Trigger T_INTAKE_MOVE_L1 = Controlls.DRIVER_CONTROLLER.povUp();\par
+    \}\par
+\par
+    public static class EnabledParts \{\par
+        // Hope Not To Use...\par
+        public static boolean IS_LED_ENABLED = true;\par
+        public static boolean IS_OBJECT_SENSOR_ENABLED = true;\par
+        public static boolean IS_ALGEA_INTAKE_ENABLED = true;\par
+        public static boolean IS_INTAKE_MOVER_ENABLED = true;\par
+        public static boolean IS_ELEVATOR_ENABLED = true;\par
+        public static boolean IS_SWERVE_ENABLED = true;\par
+        public static boolean IS_ROTARY_SWITCH_ENABLED = false;\par
+        public static boolean IS_INTAKE_ENABLED = true;\par
+    \}\par
+\par
+    public static final class OI \{\par
+        // General Robot Constants\par
+        public static int DRIVER_CONTROLLER_PORT = 0;\par
+        public static int OPERATOR_CONTROLLER_PORT = 1;\par
+        public static String SWERVE_CANBUS_STRING = "rio";\par
+        public static String RIO_CANBUS_STRING = "rio";\par
+        public static boolean IS_TEST = false;\par
+        public static boolean IS_PROCESSING = false;\par
+        public static boolean IS_PID_ENDED = false;\par
+        public static boolean IS_INTAKE_MOVING = false;\par
+        public static boolean IS_SWERVE_FOCUSED = false;\par
+        public static boolean IS_INTAKING = false;\par
+        public static boolean IS_ALGEA_INTAKING = false;\par
+        public static boolean IS_LED_CYCLING = false;\par
+        public static boolean IS_LED_MORSE_SHOWING = false;\par
+        public static boolean IS_FOCUSED = false;\par
+        public static boolean IS_GONE = false;\par
+        public static double LIMELIGHT_SPEED = 0.4;\par
+    \}\par
+\}\par
+\par
+\par
+\par
+\cf1\f2\fs32\lang1055 MAYBE\cf4  \cf3 THIS \ul\f3 IS \cf4\fs96   THE END\f2\fs18 (just maybe)\f3\fs96\par
+\cf3\ulnone\f1\fs22\lang31\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf2\b\f0\fs40\lang1055 THAT WAS \cf4  2025 AMAL HAWS FRC ROBOT'S CODES\par
+\cf3\b0\f1\fs22\lang31\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\cf0\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+
+\pard\ri-784\sa200\sl276\slmult1\par
+}
+ 
