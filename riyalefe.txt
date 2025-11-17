@@ -1,0 +1,114 @@
+// Algea Intake Subsystem
+
+public class AlgeaIntakeSubsystem extends SubsystemBase {
+
+    public TalonFX leaderMotor;
+
+    public void resetEncoders() {
+        leaderMotor.setPosition(0);
+    }
+
+    public void Intake() {
+        if (timer.hasElapsed(AlgeaIntake.INTAKE_TIME)) {
+            leaderMotor.stopMotor();
+            OI.IS_ALGEA_INTAKING = false;
+        } else {
+            leaderMotor.set(AlgeaIntake.INTAKE_SPEED);
+        }
+    }
+
+    public void Shoot() {
+        if (timer.hasElapsed(AlgeaIntake.OUTTAKE_TIME)) {
+            leaderMotor.stopMotor();
+            OI.IS_ALGEA_INTAKING = false;
+        } else {
+            leaderMotor.set(-AlgeaIntake.OUTTAKE_SPEED);
+        }
+    }
+
+    public void manualControl(double speed) {
+        leaderMotor.set(speed);
+
+        double maxRPM = 6000;
+        double loopTimeSeconds = 0.02;
+
+        double revolutionsPerSecond = (maxRPM / 60.0) * Math.abs(speed);
+        double revolutionsPerLoop = revolutionsPerSecond * loopTimeSeconds;
+
+        simEncoder += speed > 0 ? revolutionsPerLoop : -revolutionsPerLoop;
+    }
+
+    public void IntakeWithSensor() {
+        if (!EnabledParts.IS_OBJECT_SENSOR_ENABLED) {
+            if (timer.hasElapsed(Intake.INTAKE_TIME)) {
+                leaderMotor.stopMotor();
+                OI.IS_INTAKING = false;
+            } else {
+                leaderMotor.set(-Intake.INTAKE_SPEED);
+            }
+        } else {
+            if (!container.objectDetector.CheckObject()) {
+                leaderMotor.set(-Intake.INTAKE_SPEED);
+            } else {
+                leaderMotor.stopMotor();
+                OI.IS_INTAKING = false;
+            }
+        }
+    }
+
+    public void ShootWithSensor() {
+        if (!EnabledParts.IS_OBJECT_SENSOR_ENABLED) {
+            if (timer.hasElapsed(Intake.OUTTAKE_TIME)) {
+                leaderMotor.stopMotor();
+                OI.IS_INTAKING = false;
+            } else {
+                leaderMotor.set(-Intake.OUTTAKE_SPEED);
+            }
+        } else {
+            if (container.objectDetector.CheckObject()) {
+                leaderMotor.set(-Intake.OUTTAKE_SPEED);
+            } else {
+                leaderMotor.stopMotor();
+                OI.IS_INTAKING = false;
+            }
+        }
+    }
+}
+
+
+
+// Elevator Hız Hesaplama
+
+if (index <= 3) {
+    Elevator.PROCESS_SPEED = Elevator.CURRENT_DIRECTION
+        ? Elevator.UP_SPEED + index * (Elevator.MAX_UP_SPEED / 6)
+        : Elevator.DOWN_SPEED + index * (Elevator.MAX_DOWN_SPEED / 6);
+}
+
+
+
+// OCAL_PID_PREMIUM PID Kontrol
+
+public void OCAL_PID_PREMIUM(double setpoint) {
+
+    double g = setpoint;
+    double p = Elevator.PROCESS_START_POSITION;
+    double x = getLeaderMotorEncoder();
+
+    if ((x > (Elevator.ELEVATOR_END_VALUE - Elevator.OCAL_PID_TOLERANCE_VALUE) && Elevator.CURRENT_DIRECTION)
+        || isWithinTolerance(x, setpoint)) {
+
+        OI.IS_PID_ENDED = true;
+        leaderMotor.set(0);
+        followerMotor.set(0);
+        return;
+    }
+
+    double total = Math.abs(g - p);
+    double stepDist = total / 6.0;
+
+    if (stepDist < 1e-4)
+        stepDist = 1e-4;
+
+    // l1 l2 l3 l4 logic here
+}
